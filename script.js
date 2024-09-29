@@ -1,4 +1,4 @@
-const socket = new WebSocket('ws://localhost:8080');
+const socket = new WebSocket('wss://pencil-with-dsa-implementation.onrender.com');
 
 socket.onopen = function (event) {
     console.log('Connected to the WebSocket server');
