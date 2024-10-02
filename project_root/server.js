@@ -27,13 +27,12 @@ wss.on('connection', (ws) => {
     // Parse the message
     const data = JSON.parse(message);
     
-    // Add the user ID to the message
-    data.userId = userId;
+    if (!data.userId) {
+      data.userId = userId;
+    }
 
     // If it's a draw event and doesn't have a strokeId, add one
-    if (data.type === 'draw' && !data.strokeId) {
-      data.strokeId = uuidv4();
-    }
+    
 
     // Broadcast to all clients except the sender
     wss.clients.forEach((client) => {

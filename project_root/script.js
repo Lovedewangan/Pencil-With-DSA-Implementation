@@ -276,6 +276,9 @@ function detectLineClick(x, y) {
     return null;
 }
 
+let currentStroke = null;
+let userStrokes = {};
+
 // Mouse event handlers
 canvas.addEventListener("mousedown", (e) => {
     if (!isPencilActive && !isEraserActive && !isNeonPenActive && !isSelectionActive) return; // Do nothing if no tool is active
@@ -299,23 +302,20 @@ canvas.addEventListener("mousedown", (e) => {
         const brushColor = document.getElementById("brushColor").value;
         const [r, g, b] = hexToRgb(brushColor);
 
-        const newStroke = new Stroke();
-        newStroke.addPoint(x, y);
-        newStroke.setColor(r / 255, g / 255, b / 255, 1);
+        currentStroke = new Stroke();
+        currentStroke.addPoint(x, y);
+        currentStroke.setColor(r / 255, g / 255, b / 255, 1);
 
-        strokes.push(newStroke);
-
-        canvas.style.cursor = 'crosshair';
-        draw();
+        strokes.push(currentStroke);
 
         // Send the new stroke data to the server
         const message = JSON.stringify({
-            type: 'draw',
-            userId: userId,  // You need to set this when the user connects
+            type: 'drawStart',
+            userId: userId,
+            strokeId: currentStroke.id,
             x,
             y,
-            color: currentStroke.color,
-            strokeId: currentStroke.id
+            color: currentStroke.color
         });
         socket.send(message);
     }
@@ -391,18 +391,16 @@ canvas.addEventListener("mousemove", (e) => {
 
     
 
-    if (isPencilActive && isDrawing) {
-        const currentStroke = strokes[strokes.length - 1];
+    if (isPencilActive && currentStroke) {
         currentStroke.addPoint(x, y);
-        draw();
+        requestAnimationFrame(draw);
 
         const message = JSON.stringify({
             type: 'draw',
-            userId: userId,  // You need to set this when the user connects
+            userId: userId,
+            strokeId: currentStroke.id,
             x,
-            y,
-            color: currentStroke.color,
-            strokeId: currentStroke.id
+            y
         });
         socket.send(message);
     }
@@ -462,10 +460,15 @@ canvas.addEventListener("mousemove", (e) => {
 canvas.addEventListener("mouseup", () => {
     
     if (isDrawing) {
-        const message = JSON.stringify({ type: 'drawEnd' });
+        const message = JSON.stringify({ 
+            type: 'drawEnd',
+            userId: userId,
+            strokeId: currentStroke ? currentStroke.id : null
+        });
         socket.send(message);
     }
     isDrawing = false;
+    currentStroke = null;
 
 
     if (isNeonPenActive) {
@@ -504,6 +507,8 @@ canvas.addEventListener("mouseout", () => {
     }
 });
 
+
+let animationFrameId = null;
 // Draw function for normal strokes
 function draw() {
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -520,6 +525,13 @@ function draw() {
         } else {
             stroke.draw(gl, colorLocation);
         }
+    }
+
+    // Request next frame only if there's ongoing drawing
+    if (isDrawing || Object.keys(userStrokes).length > 0) {
+        animationFrameId = requestAnimationFrame(draw);
+    } else {
+        animationFrameId = null;
     }
 }
 
@@ -603,28 +615,32 @@ function handleRemoteSelection(data) {
 
 let currentRemoteStroke = null;
 let isNewStroke = true;
-let userStrokes = {};
+
 
 function handleRemoteDrawing(data) {
     const { type, userId, strokeId } = data;
     
     switch (type) {
-        case 'draw':
+        case 'drawStart':
             const { x, y, color } = data;
-            
-            if (!userStrokes[userId] || userStrokes[userId].id !== strokeId) {
-                userStrokes[userId] = new Stroke();
-                userStrokes[userId].id = strokeId;
-                userStrokes[userId].setColor(color[0], color[1], color[2], color[3]);
-                strokes.push(userStrokes[userId]);
-            }
-            
-            userStrokes[userId].addPoint(x, y);
-            requestAnimationFrame(draw);  // Use requestAnimationFrame for smoother rendering
+            userStrokes[strokeId] = new Stroke();
+            userStrokes[strokeId].id = strokeId;
+            userStrokes[strokeId].setColor(color[0], color[1], color[2], color[3]);
+            strokes.push(userStrokes[strokeId]);
+            userStrokes[strokeId].addPoint(x, y);
+            requestAnimationFrame(draw);
             break;
+
+        case 'draw':
+            const { x: drawX, y: drawY } = data;
+            if (userStrokes[strokeId]) {
+                userStrokes[strokeId].addPoint(drawX, drawY);
+                requestAnimationFrame(draw);
+            }
+            break;
+
         case 'drawEnd':
-            // Reset the current remote stroke for this user
-            userStrokes[userId] = null;
+            delete userStrokes[strokeId];
             break;
 
         case 'erase':
@@ -702,7 +718,7 @@ function colorMatch(color1, color2) {
 
 
 // Clear the canvas
-let animationFrameId = null;
+
 function clearCanvas() {
     gl.clearColor(245 / 255, 245 / 255, 245 / 255, 1); // Off-white background
     gl.clear(gl.COLOR_BUFFER_BIT);
