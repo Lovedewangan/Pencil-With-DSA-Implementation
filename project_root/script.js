@@ -300,10 +300,11 @@ canvas.addEventListener("mousedown", (e) => {
         // Send the new stroke data to the server
         const message = JSON.stringify({
             type: 'draw',
+            userId: yourUserId,  // You need to set this when the user connects
             x,
             y,
-            color: newStroke.color,
-            strokeId: newStroke.id
+            color: currentStroke.color,
+            strokeId: currentStroke.id
         });
         socket.send(message);
     }
@@ -386,6 +387,7 @@ canvas.addEventListener("mousemove", (e) => {
 
         const message = JSON.stringify({
             type: 'draw',
+            userId: yourUserId,  // You need to set this when the user connects
             x,
             y,
             color: currentStroke.color,
@@ -590,30 +592,28 @@ function handleRemoteSelection(data) {
 
 let currentRemoteStroke = null;
 let isNewStroke = true;
+let userStrokes = {};
 
 function handleRemoteDrawing(data) {
-    const { type } = data;
+    const { type, userId } = data;
     
     switch (type) {
         case 'draw':
             const { x, y, color, strokeId } = data;
             
-            // Check if we need to start a new stroke
-            if (isNewStroke || !currentRemoteStroke || !colorMatch(currentRemoteStroke.color, color) || currentRemoteStroke.id !== strokeId) {
-                currentRemoteStroke = new Stroke();
-                currentRemoteStroke.id = strokeId;
-                currentRemoteStroke.setColor(color[0], color[1], color[2], color[3]);
-                strokes.push(currentRemoteStroke);
-                isNewStroke = false;
+            if (!userStrokes[userId]) {
+                userStrokes[userId] = new Stroke();
+                userStrokes[userId].id = strokeId;
+                userStrokes[userId].setColor(color[0], color[1], color[2], color[3]);
+                strokes.push(userStrokes[userId]);
             }
             
-            currentRemoteStroke.addPoint(x, y);
+            userStrokes[userId].addPoint(x, y);
             draw();  // Redraw the canvas to include the new point
             break;
         case 'drawEnd':
-            // Reset the current remote stroke and set isNewStroke to true
-            currentRemoteStroke = null;
-            isNewStroke = true;
+            // Reset the current remote stroke for this user
+            userStrokes[userId] = null;
             break;
 
         case 'erase':
