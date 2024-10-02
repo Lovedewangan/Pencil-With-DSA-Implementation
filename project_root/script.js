@@ -606,13 +606,13 @@ let isNewStroke = true;
 let userStrokes = {};
 
 function handleRemoteDrawing(data) {
-    const { type, userId } = data;
+    const { type, userId, strokeId } = data;
     
     switch (type) {
         case 'draw':
-            const { x, y, color, strokeId } = data;
+            const { x, y, color } = data;
             
-            if (!userStrokes[userId]) {
+            if (!userStrokes[userId] || userStrokes[userId].id !== strokeId) {
                 userStrokes[userId] = new Stroke();
                 userStrokes[userId].id = strokeId;
                 userStrokes[userId].setColor(color[0], color[1], color[2], color[3]);
@@ -620,7 +620,7 @@ function handleRemoteDrawing(data) {
             }
             
             userStrokes[userId].addPoint(x, y);
-            draw();  // Redraw the canvas to include the new point
+            requestAnimationFrame(draw);  // Use requestAnimationFrame for smoother rendering
             break;
         case 'drawEnd':
             // Reset the current remote stroke for this user
@@ -630,12 +630,12 @@ function handleRemoteDrawing(data) {
         case 'erase':
             const { x: eraseX, y: eraseY } = data;
             eraseStroke(eraseX, eraseY);
-            draw();
+            requestAnimationFrame(draw);
             break;
 
         case 'neonDraw':
             const { x: neonX, y: neonY, color: neonColor, startTime, lastDrawTime } = data;
-            let currentNeonStroke = fadeStrokes.find(stroke => stroke.startTime === startTime);
+            let currentNeonStroke = fadeStrokes.find(stroke => stroke.startTime === startTime && stroke.userId === userId);
             
             if (!currentNeonStroke) {
                 currentNeonStroke = {
@@ -645,7 +645,8 @@ function handleRemoteDrawing(data) {
                     lastDrawTime: lastDrawTime,
                     isFading: false,
                     fadeStartTime: null,
-                    alpha: 1
+                    alpha: 1,
+                    userId: userId
                 };
                 fadeStrokes.push(currentNeonStroke);
             }
@@ -679,15 +680,14 @@ function handleRemoteDrawing(data) {
                         localStroke.rotateLine(rotationAngle);
                         break;
                 }
-                draw();
+                requestAnimationFrame(draw);
             }
             break;
-    
 
         case 'clear':
             strokes.length = 0;
             fadeStrokes.length = 0;
-            draw();
+            requestAnimationFrame(draw);
             break;
 
         default:
