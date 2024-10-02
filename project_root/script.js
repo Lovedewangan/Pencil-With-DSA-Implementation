@@ -1,26 +1,38 @@
-const socket = new WebSocket('wss://pencil-with-dsa-implementation.onrender.com');
-// const socket = new WebSocket('http://localhost:8080/')
-socket.onopen = function (event) {
-    console.log('Connected to the WebSocket server');
-};
 
-socket.onmessage = function (event) {
-    console.log('Received message from server:', event.data);
-    const data = JSON.parse(event.data);
-    handleRemoteDrawing(data);
-};
 
-socket.onerror = function (error) {
-    console.error(`WebSocket Error: ${error}`);
-};
+function connectWebSocket() {
+    socket = new WebSocket('wss://pencil-with-dsa-implementation.onrender.com');
 
-socket.onclose = function (event) {
-    console.log('WebSocket connection closed:', event);
-    if (event.code !== 1000) {
-        console.error('WebSocket closed unexpectedly. Code:', event.code, 'Reason:', event.reason);
-    }
-};
+    socket.onopen = function (event) {
+        console.log('Connected to the WebSocket server');
+    };
 
+    socket.onmessage = function (event) {
+        const data = JSON.parse(event.data);
+        if (data.type === 'userId') {
+            userId = data.userId;
+            console.log('Received user ID:', userId);
+        } else {
+            handleRemoteDrawing(data);
+        }
+    };
+
+    socket.onerror = function (error) {
+        console.error(`WebSocket Error: ${error}`);
+    };
+
+    socket.onclose = function (event) {
+        console.log('WebSocket connection closed:', event);
+        if (event.code !== 1000) {
+            console.error('WebSocket closed unexpectedly. Code:', event.code, 'Reason:', event.reason);
+            // Attempt to reconnect after a delay
+            setTimeout(connectWebSocket, 5000);
+        }
+    };
+}
+
+// Call this function when your application starts
+connectWebSocket();
 document.getElementById("clearTool").addEventListener("click", clearCanvas);
 
 
@@ -300,7 +312,7 @@ canvas.addEventListener("mousedown", (e) => {
         // Send the new stroke data to the server
         const message = JSON.stringify({
             type: 'draw',
-            userId: yourUserId,  // You need to set this when the user connects
+            userId: userId,  // You need to set this when the user connects
             x,
             y,
             color: currentStroke.color,
@@ -387,7 +399,7 @@ canvas.addEventListener("mousemove", (e) => {
 
         const message = JSON.stringify({
             type: 'draw',
-            userId: yourUserId,  // You need to set this when the user connects
+            userId: userId,  // You need to set this when the user connects
             x,
             y,
             color: currentStroke.color,
