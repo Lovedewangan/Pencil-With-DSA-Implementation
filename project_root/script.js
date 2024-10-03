@@ -527,12 +527,12 @@ function draw() {
         }
     }
 
-    // Request next frame only if there's ongoing drawing
-    if (isDrawing || Object.keys(userStrokes).length > 0) {
-        animationFrameId = requestAnimationFrame(draw);
-    } else {
-        animationFrameId = null;
-    }
+    // // Request next frame only if there's ongoing drawing
+    // if (isDrawing || Object.keys(userStrokes).length > 0) {
+    //     animationFrameId = requestAnimationFrame(draw);
+    // } else {
+    //     animationFrameId = null;
+    // }
 }
 
 let currentTime = 0;
