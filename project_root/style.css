@@ -27,27 +27,29 @@ html {
 
 #footer {
   position: fixed; 
-  top: 90;
+  bottom: 0;
   left: 0;
-  width: 2150px; /* Sidebar width */
-  height: 6vh; /* Full viewport height */
+  width: 100%; /* Full width */
+  height: 6vh; /* Footer height */
   background-color: #e0e0e0;
-  /* border: 1px solid #afafaf; */
   border-radius: 8px;
   z-index: 1000;
   display: flex;
-  flex-direction: column;
+  flex-direction: row; /* Align content in a row */
   align-items: center;
-/* margin-left: 33%; */
-  /* margin-bottom: 10px; */
-  /* padding-top: 20px;  */
-  margin-top: 920px;
-  
+  justify-content: center; /* Center content */
   box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); 
 }
 
+#footer img {
+  width: 80px;
+  margin-right: 10px; /* Add space between image and text */
+}
+
+
+
 #footer .cen{
-  margin-right: 400px;
+  
   margin-top: 20px;
 }
 
