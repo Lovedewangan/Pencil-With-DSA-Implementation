@@ -1,5 +1,3 @@
-
-
 function connectWebSocket() {
     socket = new WebSocket('wss://pencil-with-dsa-implementation.onrender.com');
     socket.onopen = function (event) {
@@ -551,33 +549,38 @@ function draw_neon() {
     const currentTime = Date.now();
     let activeStrokes = 0;
 
-    Object.keys(fadeStrokes).forEach(userId => {
-        fadeStrokes[userId] = fadeStrokes[userId].filter(stroke => {
-            const timeSinceLastDraw = currentTime - stroke.lastDrawTime;
+    fadeStrokes = fadeStrokes.filter(stroke => {
+    
+        // return alpha > 0;
+        const timeSinceLastDraw = currentTime - stroke.lastDrawTime;
+        //const timeSinceStart = currentTime - stroke.startTime;
 
-            if (timeSinceLastDraw > FADE_DELAY) {
-                if (!stroke.isFading) {
-                    stroke.isFading = true;
-                    stroke.fadeStartTime = currentTime;
-                }
-                const fadeTime = currentTime - stroke.fadeStartTime;
-                const fadeDuration = 1000; // 1 second fade duration
-                stroke.alpha = Math.max(1 - fadeTime / fadeDuration, 0);
-            } else {
-                stroke.alpha = 1;
-            }
+        //if (timeSinceLastDraw > FADE_DELAY) {
 
-            if (stroke.alpha > 0) {
-                activeStrokes++;
-                const points = stroke.points.flat();
-                const fadedColor = [...stroke.color.slice(0, 3), stroke.alpha];
-                gl.uniform4f(colorLocation, ...fadedColor);
-                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(points), gl.STATIC_DRAW);
-                gl.drawArrays(gl.LINE_STRIP, 0, points.length / 2);
-                return true;
+        if (timeSinceLastDraw > FADE_DELAY) {
+            if (!stroke.isFading) {
+                stroke.isFading = true;
+                stroke.fadeStartTime = currentTime;
             }
-            return false;
-        });
+            const fadeTime = currentTime - stroke.fadeStartTime;
+            const fadeDuration = 1000; // 1 second fade duration
+            stroke.alpha = Math.max(1 - fadeTime / fadeDuration, 0);
+        } else {
+            stroke.alpha = 1;
+        }
+
+        
+
+        if (stroke.alpha > 0) {
+            activeStrokes++;
+            const points = stroke.points.flat();
+            const fadedColor = [...stroke.color.slice(0, 3), stroke.alpha];
+            gl.uniform4f(colorLocation, ...fadedColor);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(points), gl.STATIC_DRAW);
+            gl.drawArrays(gl.LINE_STRIP, 0, points.length / 2);
+            return true;
+        }
+        return false;
     });
 
 
@@ -646,10 +649,7 @@ function handleRemoteDrawing(data) {
 
         case 'neonDraw':
             const { x: neonX, y: neonY, color: neonColor, startTime, lastDrawTime } = data;
-            if (!fadeStrokes[userId]) {
-                fadeStrokes[userId] = [];
-            }
-            let currentNeonStroke = fadeStrokes[userId].find(stroke => stroke.startTime === startTime);
+            let currentNeonStroke = fadeStrokes.find(stroke => stroke.startTime === startTime && stroke.userId === userId);
             
             if (!currentNeonStroke) {
                 currentNeonStroke = {
@@ -659,9 +659,10 @@ function handleRemoteDrawing(data) {
                     lastDrawTime: lastDrawTime,
                     isFading: false,
                     fadeStartTime: null,
-                    alpha: 1
+                    alpha: 1,
+                    userId: userId
                 };
-                fadeStrokes[userId].push(currentNeonStroke);
+                fadeStrokes.push(currentNeonStroke);
             }
 
             currentNeonStroke.points.push([neonX, neonY]);
