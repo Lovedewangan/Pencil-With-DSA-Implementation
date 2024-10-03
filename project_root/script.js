@@ -72,9 +72,10 @@ window.addEventListener('resize', () => {
 // Vertex shader for Strokes Position
 const vertexShaderSource = `
     attribute vec4 a_position;
+    uniform float u_pointSize;
     void main() {
         gl_Position = a_position;
-        gl_PointSize = 2.0; // Set the size of the point
+        gl_PointSize = u_pointSize;
     }
 `;
 
@@ -394,6 +395,8 @@ canvas.addEventListener("mousedown", (e) => {
         }
     }
 
+    
+
 });
 
 
@@ -562,6 +565,9 @@ let animationFrameId = null;
 function draw() {
     gl.clear(gl.COLOR_BUFFER_BIT);
 
+    // Draw the background
+    drawBackground();
+
     for (let stroke of strokes) {
         if (stroke === selectedStroke) {
             // Draw a highlight around the selected stroke
@@ -590,7 +596,7 @@ function draw_neon() {
     gl.clear(gl.COLOR_BUFFER_BIT);
 
 
-
+    draw();
     // Draw pencil strokes
     strokes.forEach((stroke) => {
         stroke.draw(gl, colorLocation);
@@ -643,6 +649,162 @@ function draw_neon() {
         animationFrameId = null;
     }
 }
+
+const backgroundTypes = {
+    BLANK: 'blank',
+    GRAPH: 'graph',
+    DOTS: 'dots',
+    LINES: 'lines',
+    HONEYCOMB: 'honeycomb',
+};
+
+let currentBackground = backgroundTypes.BLANK;
+
+function drawBackground() {
+    switch (currentBackground) {
+        case backgroundTypes.GRAPH:
+            drawGraphBackground();
+            break;
+        case backgroundTypes.DOTS:
+            drawDotsBackground();
+            break;
+        case backgroundTypes.LINES:
+            drawLinesBackground();
+            break;
+        
+        case backgroundTypes.HONEYCOMB:
+            drawHoneycombBackground();
+            break;
+        
+        case backgroundTypes.BLANK:
+        default:
+            // Do nothing for blank background
+            break;
+    }
+}
+
+function drawGraphBackground() {
+    const gridSize = 50; // Size of each grid square in pixels
+    gl.useProgram(program);
+    
+    // Set color to light grey
+    gl.uniform4f(colorLocation, 0.9, 0.9, 0.9, 1);
+    
+    // Draw vertical lines
+    for (let x = 0; x <= canvas.width; x += gridSize) {
+        const normalizedX = (x / canvas.width) * 2 - 1;
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+            normalizedX, -1,
+            normalizedX, 1
+        ]), gl.STATIC_DRAW);
+        gl.drawArrays(gl.LINES, 0, 2);
+    }
+    
+    // Draw horizontal lines
+    for (let y = 0; y <= canvas.height; y += gridSize) {
+        const normalizedY = 1 - (y / canvas.height) * 2;
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+            -1, normalizedY,
+            1, normalizedY
+        ]), gl.STATIC_DRAW);
+        gl.drawArrays(gl.LINES, 0, 2);
+    }
+}
+
+function drawDotsBackground() {
+    const dotSpacing = 150; // Space between dots in pixels
+    const dotSize = 3.0; // Size of the dots (you can adjust this value)
+    
+    gl.useProgram(program);
+    
+    // Set color to light grey
+    gl.uniform4f(colorLocation, 0.5, 0.5, 0.5, 1);
+    
+    // Set the point size
+    const pointSizeLocation = gl.getUniformLocation(program, "u_pointSize");
+    gl.uniform1f(pointSizeLocation, dotSize);
+    
+    for (let x = 0; x <= canvas.width; x += dotSpacing) {
+        for (let y = 0; y <= canvas.height; y += dotSpacing) {
+            const normalizedX = (x / canvas.width) * 2 - 1;
+            const normalizedY = 1 - (y / canvas.height) * 2;
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([normalizedX, normalizedY]), gl.STATIC_DRAW);
+            gl.drawArrays(gl.POINTS, 0, 1);
+        }
+    }
+}
+
+function drawLinesBackground() {
+    const lineSpacing = 50; // Space between lines in pixels
+    gl.useProgram(program);
+    
+    // Set color to light grey
+    gl.uniform4f(colorLocation, 0.9, 0.9, 0.9, 1);
+    
+    // Draw horizontal lines
+    for (let y = 0; y <= canvas.height; y += lineSpacing) {
+        const normalizedY = 1 - (y / canvas.height) * 2;
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+            -1, normalizedY,
+            1, normalizedY
+        ]), gl.STATIC_DRAW);
+        gl.drawArrays(gl.LINES, 0, 2);
+    }
+}
+
+function drawHoneycombBackground() {
+    const hexSize = 30; // Size of each hexagon
+    const hexColor = [0.9, 0.9, 0.9, 1]; // Light grey
+    
+    gl.useProgram(program);
+    gl.uniform4f(colorLocation, ...hexColor);
+    
+    let hexagons = [];
+    
+    for (let y = 0; y < canvas.height + hexSize * 2; y += hexSize * 1.5) {
+        for (let x = 0; x < canvas.width + hexSize * 2; x += hexSize * Math.sqrt(3)) {
+            const centerX = x / canvas.width * 2 - 1;
+            const centerY = 1 - y / canvas.height * 2;
+            
+            for (let i = 0; i < 6; i++) {
+                const angle = i / 6 * Math.PI * 2;
+                const nextAngle = (i + 1) / 6 * Math.PI * 2;
+                
+                hexagons.push(
+                    centerX + Math.cos(angle) * hexSize / canvas.width,
+                    centerY + Math.sin(angle) * hexSize / canvas.height,
+                    centerX + Math.cos(nextAngle) * hexSize / canvas.width,
+                    centerY + Math.sin(nextAngle) * hexSize / canvas.height
+                );
+            }
+        }
+    }
+    
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(hexagons), gl.STATIC_DRAW);
+    gl.drawArrays(gl.LINES, 0, hexagons.length / 2);
+}
+
+
+// Function to switch and draw the selected background
+function changeBackground(backgroundType) {
+    if (backgroundTypes.hasOwnProperty(backgroundType)) {
+        currentBackground = backgroundTypes[backgroundType];
+        draw(); // Redraw the canvas with the new background
+        
+        // Send the background change to other clients
+        const message = JSON.stringify({
+            type: 'backgroundChange',
+            backgroundType: backgroundType
+        });
+        socket.send(message);
+    } else {
+        console.error('Invalid background type');
+    }
+     // Hide the dropdown after selection
+     const dropdown = document.getElementById('backgroundDropdown');
+     dropdown.style.display = 'none';
+}
+
 
 
 // Function to handle remote selection updates
@@ -754,6 +916,11 @@ function handleRemoteDrawing(data) {
             fadeStrokes.length = 0;
             requestAnimationFrame(draw);
             break;
+
+        case 'backgroundChange':
+            currentBackground = backgroundTypes[data.backgroundType];
+            requestAnimationFrame(draw);
+            break;    
 
         default:
             console.log('Unknown drawing type:', type);
@@ -973,3 +1140,27 @@ clearTool.addEventListener("mouseup", () => {
 clearTool.addEventListener("mouseleave", () => {
     clearTool.classList.remove("active");
 });
+
+// Function to toggle the background selector dropdown
+function toggleBackgroundSelector() {
+    const dropdown = document.getElementById('backgroundDropdown');
+    dropdown.style.display = (dropdown.style.display === 'none' || dropdown.style.display === '') ? 'flex' : 'none';
+}
+
+// Function to close the background selector dropdown
+function closeBackgroundSelector(event) {
+    const dropdown = document.getElementById('backgroundDropdown');
+    // Check if the click target is outside the dropdown and the set background tool
+    if (dropdown.style.display === 'flex' && 
+        !dropdown.contains(event.target) && 
+        event.target.id !== 'setBackgroundTool') {
+        dropdown.style.display = 'none'; // Close the dropdown
+    }
+}
+
+
+canvas.addEventListener('click', closeBackgroundSelector);
+
+// Optional: To close the dropdown when clicking outside of it
+document.addEventListener('click', closeBackgroundSelector);
+

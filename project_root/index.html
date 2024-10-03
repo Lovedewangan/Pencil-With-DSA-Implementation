@@ -10,7 +10,35 @@
 
 <body>
   <div id="Topbar">
+
+
     <img src="Assets/All Clear.png" class="tool-icon-clear" id="clearTool" alt="Clear Tool" />
+    <img src="Assets/background.png" class="tool-icon-topbar" id="setBackgroundTool"   alt="Set Background Tool" onclick="toggleBackgroundSelector()" />
+    
+    <div id="backgroundDropdown" class="background-dropdown">
+      <div class="background-option" onclick="changeBackground('BLANK')">
+        <img src="Assets/Background Images/Blank.png" alt="Blank" />
+        
+      </div>
+      <div class="background-option" onclick="changeBackground('DOTS')">
+        <img src="Assets/Background Images/Dots.png" alt="Dots" />
+        
+      </div>
+      <div class="background-option" onclick="changeBackground('GRAPH')">
+        <img src="Assets/Background Images/Graph.jpg" alt="Graph" />
+        
+      </div>
+      <div class="background-option" onclick="changeBackground('LINES')">
+        <img src="Assets/Background Images/Lines.png" alt="Lines" />
+        
+      </div>
+      <div class="background-option" onclick="changeBackground('HONEYCOMB')">
+        <img src="Assets/Background Images/Honeycomb.jpg" alt="Honeycomb" />
+        
+      </div>
+    </div>
+    
+
   </div>
   
   <div id="sidebar">
@@ -25,8 +53,9 @@
   <div id="footer">
     <p class="cen">Developed by Graphics & Gaming students 2024</p>
   </div>
-
+  
   <canvas id="webglCanvas"></canvas>
+  
   <script src="script.js"></script>
   
 </body>

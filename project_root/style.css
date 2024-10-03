@@ -10,24 +10,19 @@ html {
 }
 
 #Topbar {
-  position: fixed;
+  position: fixed; 
   top: 0;
   left: 0;
-  width: 800px;
-  /* Sidebar width */
-  height: 6vh;
-  /* Full viewport height */
+  width: 800px; /* Adjust as needed */
+  height: 6vh; /* Full viewport height */
   background-color: #ccc;
-  /* border: 1px solid #afafaf; */
   border-radius: 8px;
   z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-left: 27%;
+  display: flex; /* Change from column to row */
+  align-items: center; /* Align items vertically */
+  margin-left: 33%;
   margin-top: 10px;
-  /* padding-top: 20px;  */
-  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); 
 }
 
 #footer {
@@ -79,17 +74,89 @@ html {
   display: none;
 }
 
-.tool-icon-clear {
-  width: 40px;
-  /* Icon size */
+
+.tool-icon-topbar {
+  width: 40px; /* Icon size */
   height: 40px;
-  padding: 2px;
-  margin-top: 8px;
-  margin-right: 725px;
+  padding: 5px;
+  margin: 0 10px; /* Add horizontal margin */
   cursor: pointer;
   transition: background-color 0.3s, transform 0.2s;
 }
+.tool-icon-topbar:hover {
+  background-color: #ddd;
+}
 
+.tool-icon-topbar.active {
+  border-radius: 8px;
+  background-color: #3195ff;
+  transform: scale(1.1);
+}
+
+#setBackgroundTool{
+  width: 40px;
+  height: 40px;
+  padding: 4px;
+}
+
+.background-dropdown {
+  display: none; /* Hidden by default */
+  position: absolute;
+  top: 101%;
+  left: 8%;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+  width: 340px;
+  z-index: 1001;
+
+  flex-wrap: wrap; /* Allow items to wrap to the next row */
+  justify-content: space-between; /* Add spacing between the items */
+}
+
+.background-option {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  width: 48%; /* Adjust width to fit two items per row */
+  box-sizing: border-box; /* Ensure padding is included within the width */
+}
+.background-option:hover {
+  background-color: #f0f0f0;
+}
+
+.background-option img {
+  width: 130px;
+  height: 75px;
+  margin-right: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* .background-option span {
+  font-size: 14px;
+  color: #333;
+} */
+
+.background-dropdown.show {
+  display: block;
+}
+
+
+.tool-icon-clear{
+  width: 40px; /* Icon size */
+  height: 40px;
+  padding: 2px;
+  /* margin-top: 4px; */
+  margin-right: 7px;
+  margin-left: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+}
 .tool-icon-clear:hover {
   background-color: #ddd;
 }
