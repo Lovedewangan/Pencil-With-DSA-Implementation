@@ -344,11 +344,11 @@ canvas.addEventListener("mousedown", (e) => {
             lastDrawTime: Date.now(),
             isFading: false,
             fadeStartTime: null,
-            alpha: 1
+            alpha: 1,
+            userId: userId  // Add userId to the stroke
         };
         fadeStrokes.push(newNeonStroke);
 
-        //canvas.style.cursor = 'crosshair';
         canvas.style.cursor = `url('${neonPenCursor}') 0 24, auto`;
 
         if (!animationFrameId) {
@@ -358,6 +358,7 @@ canvas.addEventListener("mousedown", (e) => {
         // Send the neon stroke data to the server
         const message = JSON.stringify({
             type: 'neonDraw',
+            userId: userId,
             x,
             y,
             color: [1, 0, 0, 1],
@@ -366,13 +367,6 @@ canvas.addEventListener("mousedown", (e) => {
         });
         console.log('Sending neonDraw action:', message);
         socket.send(message);
-
-        canvas.style.cursor = `url('${neonPenCursor}') 0 24, auto`;
-        //canvas.style.cursor = 'crosshair';
-
-        if (!animationFrameId) {
-            animationFrameId = requestAnimationFrame(draw_neon);
-        }
     }
 
 
@@ -430,27 +424,29 @@ canvas.addEventListener("mousemove", (e) => {
         socket.send(message);
     }
 
+    
     else if (isNeonPenActive && isDrawing) {
-
-        //canvas.style.cursor = `url('${neonPenCursor}') 0 24, auto`;
-
         const currentTime = Date.now();
-        const currentStroke = fadeStrokes[fadeStrokes.length - 1];
-        currentStroke.points.push([x, y]);
-        currentStroke.lastDrawTime = currentTime;
+        const currentNeonStroke = fadeStrokes[fadeStrokes.length - 1];
+        
+        if (currentNeonStroke && currentNeonStroke.userId === userId) {
+            currentNeonStroke.points.push([x, y]);
+            currentNeonStroke.lastDrawTime = currentTime;
 
-        const message = JSON.stringify({
-            type: 'neonDraw',
-            x,
-            y,
-            color: currentStroke.color,
-            startTime: currentStroke.startTime,
-            lastDrawTime: currentTime
-        });
-        socket.send(message);
+            const message = JSON.stringify({
+                type: 'neonDraw',
+                userId: userId,
+                x,
+                y,
+                color: currentNeonStroke.color,
+                startTime: currentNeonStroke.startTime,
+                lastDrawTime: currentTime
+            });
+            socket.send(message);
 
-        if (!animationFrameId) {
-            animationFrameId = requestAnimationFrame(draw_neon);
+            if (!animationFrameId) {
+                animationFrameId = requestAnimationFrame(draw_neon);
+            }
         }
     }
 
@@ -500,19 +496,23 @@ canvas.addEventListener("mouseup", () => {
 
 
     if (isNeonPenActive) {
-
-        canvas.style.cursor = `url('${neonPenCursor}') 0 24, auto`;
-
-        const message = JSON.stringify({ type: 'neonDrawEnd' });
+        const message = JSON.stringify({
+            type: 'neonDrawEnd',
+            userId: userId
+        });
         socket.send(message);
-        isDrawing = false;
+        
+        // End the current neon stroke
+        if (fadeStrokes.length > 0) {
+            fadeStrokes[fadeStrokes.length - 1].lastDrawTime = Date.now();
+        }
     }
 
     isDrawing = false;
     isDragging = false;
     isResizing = false;
     isRotating = false;
-
+    currentStroke = null;
     selectedStroke = null;
 
 
@@ -711,7 +711,7 @@ function handleRemoteDrawing(data) {
                     isFading: false,
                     fadeStartTime: null,
                     alpha: 1,
-                    userId: userId
+                    userId: userId  // Add userId to the stroke
                 };
                 fadeStrokes.push(currentNeonStroke);
             }
