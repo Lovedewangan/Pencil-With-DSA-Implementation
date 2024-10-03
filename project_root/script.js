@@ -317,12 +317,9 @@ canvas.addEventListener("mousedown", (e) => {
         });
         socket.send(message);
     }
+
     if (isNeonPenActive) {
-        const [x, y] = getMousePosition(canvas, e);
-        isDrawing = true;
         const newNeonStroke = {
-            id: generateUniqueId(), // Generate a unique ID for each stroke
-            userId: userId,
             points: [[x, y]],
             color: [1, 0, 0, 1], // Neon red color
             startTime: Date.now(),
@@ -340,17 +337,19 @@ canvas.addEventListener("mousedown", (e) => {
 
         // Send the neon stroke data to the server
         const message = JSON.stringify({
-            type: 'neonDrawStart',
-            userId: userId,
-            strokeId: newNeonStroke.id,
+            type: 'neonDraw',
             x,
             y,
             color: [1, 0, 0, 1],
             startTime: newNeonStroke.startTime,
             lastDrawTime: newNeonStroke.lastDrawTime
         });
-        console.log('Sending neonDrawStart action:', message);
+        console.log('Sending neonDraw action:', message);
         socket.send(message);
+
+        if (!animationFrameId) {
+            animationFrameId = requestAnimationFrame(draw_neon);
+        }
     }
 
     
@@ -412,10 +411,10 @@ canvas.addEventListener("mousemove", (e) => {
 
         const message = JSON.stringify({
             type: 'neonDraw',
-            userId: userId,
-            strokeId: currentStroke.id,
             x,
             y,
+            color: currentStroke.color,
+            startTime: currentStroke.startTime,
             lastDrawTime: currentTime
         });
         socket.send(message);
@@ -424,7 +423,6 @@ canvas.addEventListener("mousemove", (e) => {
             animationFrameId = requestAnimationFrame(draw_neon);
         }
     }
-
 
     else if (isDragging && selectedStroke) {
         let action;
@@ -472,11 +470,7 @@ canvas.addEventListener("mouseup", () => {
 
 
     if (isNeonPenActive) {
-        const message = JSON.stringify({ 
-            type: 'neonDrawEnd',
-            userId: userId,
-            strokeId: fadeStrokes[fadeStrokes.length - 1].id
-        });
+        const message = JSON.stringify({ type: 'neonDrawEnd' });
         socket.send(message);
         isDrawing = false;
     }
@@ -653,42 +647,35 @@ function handleRemoteDrawing(data) {
             requestAnimationFrame(draw);
             break;
 
-            case 'neonDrawStart':
-                
-                const newNeonStroke = {
-                    id: strokeId,
-                    userId: userId,
-                    points: [[x, y]],
-                    color: color,
+        case 'neonDraw':
+            const { x: neonX, y: neonY, color: neonColor, startTime, lastDrawTime } = data;
+            let currentNeonStroke = fadeStrokes.find(stroke => stroke.startTime === startTime && stroke.userId === userId);
+            
+            if (!currentNeonStroke) {
+                currentNeonStroke = {
+                    points: [],
+                    color: neonColor,
                     startTime: startTime,
                     lastDrawTime: lastDrawTime,
                     isFading: false,
                     fadeStartTime: null,
-                    alpha: 1
+                    alpha: 1,
+                    userId: userId
                 };
-                fadeStrokes.push(newNeonStroke);
-                if (!animationFrameId) {
-                    animationFrameId = requestAnimationFrame(draw_neon);
-                }
-                break;
-    
-            case 'neonDraw':
-                const { x: neonX, y: neonY, lastDrawTime: neonLastDrawTime } = data;
-                let currentNeonStroke = fadeStrokes.find(stroke => stroke.id === strokeId && stroke.userId === userId);
-                
-                if (currentNeonStroke) {
-                    currentNeonStroke.points.push([neonX, neonY]);
-                    currentNeonStroke.lastDrawTime = neonLastDrawTime;
-    
-                    if (!animationFrameId) {
-                        animationFrameId = requestAnimationFrame(draw_neon);
-                    }
-                }
-                break;
-    
-            case 'neonDrawEnd':
-                // No action needed here, as the neon stroke will start fading automatically
-                break;
+                fadeStrokes.push(currentNeonStroke);
+            }
+
+            currentNeonStroke.points.push([neonX, neonY]);
+            currentNeonStroke.lastDrawTime = lastDrawTime;
+
+            if (!animationFrameId) {
+                animationFrameId = requestAnimationFrame(draw_neon);
+            }
+            break;
+
+        case 'neonDrawEnd':
+            // No action needed here, as the neon stroke will start fading automatically
+            break;
 
         case 'selection':
             const { dx, dy, selectedStroke: remoteSelectedStroke, action } = data;
