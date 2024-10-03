@@ -344,8 +344,7 @@ canvas.addEventListener("mousedown", (e) => {
             lastDrawTime: Date.now(),
             isFading: false,
             fadeStartTime: null,
-            alpha: 1,
-            userId: userId // Add the user ID here
+            alpha: 1
         };
         fadeStrokes.push(newNeonStroke);
 
@@ -363,9 +362,9 @@ canvas.addEventListener("mousedown", (e) => {
             y,
             color: [1, 0, 0, 1],
             startTime: newNeonStroke.startTime,
-            lastDrawTime: newNeonStroke.lastDrawTime,
-            userId: userId // Include the user ID in the message
+            lastDrawTime: newNeonStroke.lastDrawTime
         });
+        console.log('Sending neonDraw action:', message);
         socket.send(message);
 
         canvas.style.cursor = `url('${neonPenCursor}') 0 24, auto`;
@@ -436,20 +435,19 @@ canvas.addEventListener("mousemove", (e) => {
         //canvas.style.cursor = `url('${neonPenCursor}') 0 24, auto`;
 
         const currentTime = Date.now();
-    const currentStroke = fadeStrokes[fadeStrokes.length - 1];
-    currentStroke.points.push([x, y]);
-    currentStroke.lastDrawTime = currentTime;
+        const currentStroke = fadeStrokes[fadeStrokes.length - 1];
+        currentStroke.points.push([x, y]);
+        currentStroke.lastDrawTime = currentTime;
 
-    const message = JSON.stringify({
-        type: 'neonDraw',
-        x,
-        y,
-        color: currentStroke.color,
-        startTime: currentStroke.startTime,
-        lastDrawTime: currentTime,
-        userId: userId // Include the user ID in the message
-    });
-    socket.send(message);
+        const message = JSON.stringify({
+            type: 'neonDraw',
+            x,
+            y,
+            color: currentStroke.color,
+            startTime: currentStroke.startTime,
+            lastDrawTime: currentTime
+        });
+        socket.send(message);
 
         if (!animationFrameId) {
             animationFrameId = requestAnimationFrame(draw_neon);
@@ -701,11 +699,9 @@ function handleRemoteDrawing(data) {
             break;
 
         case 'neonDraw':
-            const { x: neonX, y: neonY, color: neonColor, startTime, lastDrawTime, userId: remoteUserId } = data;
-            let currentNeonStroke = fadeStrokes.find(stroke => 
-                stroke.startTime === startTime && stroke.userId === remoteUserId
-            );
-        
+            const { x: neonX, y: neonY, color: neonColor, startTime, lastDrawTime } = data;
+            let currentNeonStroke = fadeStrokes.find(stroke => stroke.startTime === startTime && stroke.userId === userId);
+
             if (!currentNeonStroke) {
                 currentNeonStroke = {
                     points: [],
@@ -715,14 +711,14 @@ function handleRemoteDrawing(data) {
                     isFading: false,
                     fadeStartTime: null,
                     alpha: 1,
-                    userId: remoteUserId
+                    userId: userId
                 };
                 fadeStrokes.push(currentNeonStroke);
             }
-        
+
             currentNeonStroke.points.push([neonX, neonY]);
             currentNeonStroke.lastDrawTime = lastDrawTime;
-        
+
             if (!animationFrameId) {
                 animationFrameId = requestAnimationFrame(draw_neon);
             }
