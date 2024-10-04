@@ -999,6 +999,7 @@ const neonPenTool = document.getElementById("neonPenTool");
 const selectionTool = document.getElementById("selectionTool");
 const brushColorPicker = document.getElementById("brushColor");
 const clearTool = document.getElementById("clearTool");
+const setBackgroundTool = document.getElementById("setBackgroundTool");
 
 function updateToolIconBackground(toolElement, color) {
     toolElement.style.backgroundColor = color;
@@ -1164,3 +1165,105 @@ canvas.addEventListener('click', closeBackgroundSelector);
 // Optional: To close the dropdown when clicking outside of it
 document.addEventListener('click', closeBackgroundSelector);
 
+
+
+setBackgroundTool.addEventListener("click", () => {
+
+    const dropdown = document.getElementById('backgroundDropdown');
+   
+    if(dropdown.style.display === 'flex'){
+        setBackgroundTool.classList.add("active");
+
+    }
+    else{
+        setBackgroundTool.classList.remove("active");
+
+    }
+
+});
+
+
+
+
+
+
+
+function exportAsPNG() {
+    console.log("exportAsPNG function called");
+  
+    // Force a redraw of the WebGL canvas
+    draw();
+    draw_neon();
+  
+    const tempCanvas = document.createElement("canvas");
+    const tempCtx = tempCanvas.getContext("2d");
+
+  
+    // Set the temporary canvas size to match the WebGL canvas
+    tempCanvas.width = gl.canvas.width;
+    tempCanvas.height = gl.canvas.height;
+    
+
+  
+    // Draw white background
+    tempCtx.fillStyle = "white";
+    tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+  
+    // Read pixels from WebGL context
+    const pixels = new Uint8Array(gl.canvas.width * gl.canvas.height * 4);
+    gl.readPixels(
+      0,
+      0,
+      gl.canvas.width,
+      gl.canvas.height,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      pixels
+    );
+  
+    // Create ImageData object
+    const imageData = new ImageData(
+      new Uint8ClampedArray(pixels),
+      gl.canvas.width,
+      gl.canvas.height
+    );
+  
+    // Create another temporary canvas for the WebGL content
+    const webglCanvas = document.createElement("canvas");
+    webglCanvas.width = gl.canvas.width;
+    webglCanvas.height = gl.canvas.height;
+    const webglCtx = webglCanvas.getContext("2d");
+  
+    // Put the WebGL pixels on the temporary canvas
+    webglCtx.putImageData(imageData, 0, 0);
+  
+    // Flip the WebGL content vertically (WebGL Y-coordinate is inverted)
+    tempCtx.save();
+    tempCtx.scale(1, -1);
+    tempCtx.drawImage(webglCanvas, 0, -gl.canvas.height);
+    tempCtx.restore();
+  
+    // Create a download link
+    const link = document.createElement("a");
+    link.download = "whiteboard.png";
+    link.href = tempCanvas.toDataURL("image/png");
+    console.log("Data URL created");
+  
+    // Trigger the download
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    console.log("Download triggered");
+  }
+  document.addEventListener("DOMContentLoaded", (event) => {
+    const exportButton = document.getElementById("exportButton");
+    if (exportButton) {
+      console.log("Export button found");
+      exportButton.addEventListener("click", () => {
+        console.log("Export button clicked");
+        exportAsPNG();
+      });
+    } else {
+      console.log("Export button not found");
+    }
+  });

@@ -149,6 +149,7 @@ html {
 }
 
 
+
 .tool-icon-clear{
   width: 40px; /* Icon size */
   height: 40px;
@@ -244,4 +245,24 @@ canvas {
   width: 30px;
   height: 30px;
   padding: 8%;
+}
+
+
+.export-button {
+  background-color: #000000;
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-left: 30vw;
+}
+
+.export-button:hover {
+  background-color: #3195ff;
 }
