@@ -150,6 +150,73 @@ html {
 
 
 
+
+
+
+
+/* Dark mode styles */
+body.dark-mode {
+  color: #fff;
+  background-color: #222; /* Dark background for the body */
+}
+
+
+
+body.dark-mode #footer {
+  
+  color: #000000; /* Light text for footer in dark mode */
+}
+
+body.dark-mode #footer .cen {
+  color: #000000; /* Ensure the text color is always white in dark mode */
+}
+
+
+
+body.dark-mode .tool-icon-topbar:hover,
+body.dark-mode .tool-icon:hover,
+body.dark-mode .tool-icon-2:hover {
+  background-color: #555;
+}
+
+body.dark-mode .tool-icon-topbar.active,
+body.dark-mode .tool-icon.active,
+body.dark-mode .tool-icon-2.active {
+  background-color: #0077cc;
+}
+
+body.dark-mode canvas {
+  background-color: #222;
+}
+
+/* Hide/show mode toggle buttons */
+#lightModeTool {
+  display: none;
+}
+
+body.dark-mode #lightModeTool {
+  display: inline-block;
+}
+
+body.dark-mode #darkModeTool {
+  display: none;
+}
+
+/* You may want to adjust text color for better visibility in dark mode */
+body.dark-mode #Topbar,
+body.dark-mode #sidebar,
+body.dark-mode #footer {
+  color: #fff;
+}
+
+
+
+
+
+
+
+
+
 .tool-icon-clear{
   width: 40px; /* Icon size */
   height: 40px;
@@ -261,6 +328,7 @@ canvas {
   cursor: pointer;
   border-radius: 4px;
   margin-left: 30vw;
+  
 }
 
 .export-button:hover {

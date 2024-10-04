@@ -676,6 +676,7 @@ function drawBackground() {
             drawHoneycombBackground();
             break;
         
+
         case backgroundTypes.BLANK:
         default:
             // Do nothing for blank background
@@ -912,6 +913,13 @@ function handleRemoteDrawing(data) {
             break;
 
         case 'clear':
+            const isDarkMode = data.darkMode;
+            if (isDarkMode) {
+                gl.clearColor(0.133, 0.133, 0.133, 1.0); // Dark grey for dark mode
+            } else {
+                gl.clearColor(0.961, 0.961, 0.961, 1.0); // Light grey for light mode
+            }
+            gl.clear(gl.COLOR_BUFFER_BIT);
             strokes.length = 0;
             fadeStrokes.length = 0;
             requestAnimationFrame(draw);
@@ -921,6 +929,15 @@ function handleRemoteDrawing(data) {
             currentBackground = backgroundTypes[data.backgroundType];
             requestAnimationFrame(draw);
             break;    
+            
+        case 'modeChange':
+            if (data.darkMode) {
+              enableDarkMode();
+            } else {
+              disableDarkMode();
+            }
+            updateClearColor();
+            break;
 
         default:
             console.log('Unknown drawing type:', type);
@@ -936,7 +953,16 @@ function colorMatch(color1, color2) {
 // Clear the canvas
 
 function clearCanvas() {
-    gl.clearColor(245 / 255, 245 / 255, 245 / 255, 1); // Off-white background
+
+
+    const isDarkMode = document.body.classList.contains('dark-mode');
+    
+    if (isDarkMode) {
+        gl.clearColor(0.133, 0.133, 0.133, 1.0); // Dark grey for dark mode
+    } else {
+        gl.clearColor(0.961, 0.961, 0.961, 1.0); // Light grey for light mode (245/255)
+    }
+
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     while (strokes.length > 0) {
@@ -1267,3 +1293,57 @@ function exportAsPNG() {
       console.log("Export button not found");
     }
   });
+
+
+// Dark mode toggle functionality
+const body = document.body;
+const lightModeToggle = document.getElementById('lightModeTool');
+const darkModeToggle = document.getElementById('darkModeTool');
+
+function enableDarkMode() {
+  body.classList.add('dark-mode');
+  localStorage.setItem('darkMode', 'enabled');
+  lightModeToggle.style.display = 'inline-block'; // Show light mode icon in dark mode
+  darkModeToggle.style.display = 'none';
+}
+
+function disableDarkMode() {
+  body.classList.remove('dark-mode');
+  localStorage.setItem('darkMode', null);
+  lightModeToggle.style.display = 'none';
+  darkModeToggle.style.display = 'inline-block'; // Show dark mode icon in light mode
+}
+
+// Check for saved user preference
+if (localStorage.getItem('darkMode') === 'enabled') {
+  enableDarkMode();
+} else {
+  disableDarkMode();
+}
+
+darkModeToggle.addEventListener('click', () => {
+  enableDarkMode();
+  socket.send(JSON.stringify({ type: 'modeChange', darkMode: true }));
+});
+
+lightModeToggle.addEventListener('click', () => {
+  disableDarkMode();
+  socket.send(JSON.stringify({ type: 'modeChange', darkMode: false }));
+});
+
+// Function to update WebGL clear color based on mode
+function updateClearColor() {
+  if (body.classList.contains('dark-mode')) {
+    gl.clearColor(0.133, 0.133, 0.133, 1.0); // Dark grey for dark mode
+  } else {
+    gl.clearColor(0.961, 0.961, 0.961, 1.0); // Light grey for light mode
+  }
+  draw(); // Redraw the canvas with the new background color
+}
+
+// Update clear color when toggling dark mode
+darkModeToggle.addEventListener('click', updateClearColor);
+lightModeToggle.addEventListener('click', updateClearColor);
+
+// Initial clear color setup
+updateClearColor();
