@@ -975,7 +975,10 @@ function clearCanvas() {
     draw();
 
     // Send the clear action to other connected instances
-    const message = JSON.stringify({ type: 'clear' });
+    const message = JSON.stringify({ 
+        type: 'clear',
+        darkMode: isDarkMode // Include the current mode in the message
+    });
     console.log('Sending clear action:', message);
     socket.send(message);  // Broadcast the clear action
 }
